@@ -43,6 +43,8 @@ model User {
   notifications      Notification[]
   activities         ActivityLog[]
   referencesCreated  KitchenReference[]
+  timelineMergesCreated    TimelineMerge[]    @relation("TimelineMergeCreatedBy")
+  timelineDuplicatesResolved TimelineDuplicate[] @relation("TimelineDuplicateResolvedBy")
 }
 
 model Workspace {
@@ -114,6 +116,7 @@ model Recipe {
   audio         AudioAttachment[]
   vagueItems    VagueItem[]
   verifications VerificationRun[]
+  timelineMerges TimelineMerge[]
 
   @@index([workspaceId, status])
 }
@@ -222,6 +225,7 @@ model AudioAttachment {
   recipe    Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   owner     User      @relation("AudioOwner", fields: [ownerId], references: [id])
   clips     AudioClip[]
+  timelineMergeItems TimelineMergeItem[]
 
   @@index([recipeId, kind])
   @@index([recipeId, transcriptStatus])
@@ -243,6 +247,70 @@ model AudioClip {
   vagueItemAnswers VagueItem[]     @relation("VagueItemAnswerClip")
 
   @@index([audioAttachmentId])
+}
+
+// ------------------------------------------------------------------
+// 多段口述合并时间轴
+// ------------------------------------------------------------------
+
+/// 合并提案：把同一道菜的几段口述摆到同一条时间轴上。
+/// 创建时自动标出重复表述（TimelineDuplicate，全部 pending），
+/// 必须逐条人工确认/驳回后才允许执行合并 —— 与"暂定结论不允许发布"同一条原则：
+/// 机器只标出来，结论由人下。
+model TimelineMerge {
+  id        String    @id
+  recipeId  String
+  status    String    @default("reviewing")
+  createdBy String
+  mergedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  recipe     Recipe                @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  creator    User                  @relation("TimelineMergeCreatedBy", fields: [createdBy], references: [id])
+  items      TimelineMergeItem[]
+  duplicates TimelineDuplicate[]
+
+  @@index([recipeId, status])
+}
+
+/// 参与合并的一段口述，及其在合并时间轴上的位置
+model TimelineMergeItem {
+  id         String   @id
+  mergeId    String
+  audioId    String
+  orderIndex Int
+  /// 该段口述在合并时间轴上的起始偏移（毫秒），默认首尾相接，可人工调整
+  offsetMs   Int
+  createdAt  DateTime @default(now())
+
+  merge TimelineMerge   @relation(fields: [mergeId], references: [id], onDelete: Cascade)
+  audio AudioAttachment @relation(fields: [audioId], references: [id], onDelete: Cascade)
+
+  @@unique([mergeId, audioId])
+  @@index([mergeId, orderIndex])
+}
+
+/// 自动标出的重复表述。pending 全部处理完之前，所属提案不允许合并。
+model TimelineDuplicate {
+  id             String    @id
+  mergeId        String
+  /// 归一化后的比对键（去标点、去口头禅）
+  normalizedText String
+  /// 展示用原文
+  displayText    String
+  /// JSON：TimelineDuplicateOccurrence[]（出现位置，时间为按字符位置的估算值）
+  occurrences    String
+  status         String    @default("pending")
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  merge    TimelineMerge @relation(fields: [mergeId], references: [id], onDelete: Cascade)
+  resolver User?         @relation("TimelineDuplicateResolvedBy", fields: [resolvedBy], references: [id])
+
+  @@index([mergeId, status])
 }
 
 // ------------------------------------------------------------------

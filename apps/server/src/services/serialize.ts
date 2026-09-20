@@ -10,6 +10,10 @@ import type {
   RecipeVersionDto,
   ResolvedSpec,
   StepDto,
+  TimelineDuplicateDto,
+  TimelineDuplicateOccurrence,
+  TimelineMergeDto,
+  TimelineMergeItemDto,
   UserDto,
   VagueItemDto,
   VerificationRunDto,
@@ -23,6 +27,8 @@ import type {
   HeatLevel,
   NotificationType,
   RecipeStatus,
+  TimelineDuplicateStatus,
+  TimelineMergeStatus,
   TranscriptStatus,
   VagueCategory,
   VagueStatus,
@@ -444,5 +450,101 @@ export function toVersionDto(
     ...(version.steps ? { steps: version.steps.map(toStepDto) } : {}),
     ...(version.ingredients ? { ingredients: version.ingredients.map(toIngredientDto) } : {}),
     ...(changeSources ? { changeSources } : {}),
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* 多段口述合并时间轴                                                    */
+/* ------------------------------------------------------------------ */
+
+type TimelineMergeItemRow = {
+  id: string;
+  mergeId: string;
+  audioId: string;
+  orderIndex: number;
+  offsetMs: number;
+  audio?: Parameters<typeof toAudioDto>[0];
+};
+
+export function toTimelineMergeItemDto(item: TimelineMergeItemRow): TimelineMergeItemDto {
+  return {
+    id: item.id,
+    mergeId: item.mergeId,
+    audioId: item.audioId,
+    orderIndex: item.orderIndex,
+    offsetMs: item.offsetMs,
+    ...(item.audio ? { audio: toAudioDto(item.audio) } : {}),
+  };
+}
+
+type TimelineDuplicateRow = {
+  id: string;
+  mergeId: string;
+  normalizedText: string;
+  displayText: string;
+  occurrences: string;
+  status: string;
+  resolvedBy: string | null;
+  resolvedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export function toTimelineDuplicateDto(duplicate: TimelineDuplicateRow): TimelineDuplicateDto {
+  return {
+    id: duplicate.id,
+    mergeId: duplicate.mergeId,
+    normalizedText: duplicate.normalizedText,
+    displayText: duplicate.displayText,
+    occurrences: parseJson<TimelineDuplicateOccurrence[]>(duplicate.occurrences, []),
+    status: duplicate.status as TimelineDuplicateStatus,
+    resolvedBy: duplicate.resolvedBy,
+    resolvedAt: iso(duplicate.resolvedAt),
+    createdAt: duplicate.createdAt.toISOString(),
+    updatedAt: duplicate.updatedAt.toISOString(),
+  };
+}
+
+type TimelineMergeRow = {
+  id: string;
+  recipeId: string;
+  status: string;
+  createdBy: string;
+  mergedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  items?: TimelineMergeItemRow[];
+  duplicates?: TimelineDuplicateRow[];
+};
+
+export function toTimelineMergeDto(merge: TimelineMergeRow): TimelineMergeDto {
+  const items = merge.items?.map(toTimelineMergeItemDto);
+  const duplicates = merge.duplicates?.map(toTimelineDuplicateDto);
+  // 总时长由条目实时计算，不落库：调整偏移后不会出现"库里一个数、界面一个数"
+  const totalDurationMs = (merge.items ?? []).reduce(
+    (total, item) => Math.max(total, item.offsetMs + (item.audio?.durationMs ?? 0)),
+    0,
+  );
+  return {
+    id: merge.id,
+    recipeId: merge.recipeId,
+    status: merge.status as TimelineMergeStatus,
+    totalDurationMs,
+    createdBy: merge.createdBy,
+    mergedAt: iso(merge.mergedAt),
+    createdAt: merge.createdAt.toISOString(),
+    updatedAt: merge.updatedAt.toISOString(),
+    ...(items ? { items } : {}),
+    ...(duplicates ? { duplicates } : {}),
+    ...(merge.duplicates
+      ? {
+          counts: {
+            items: merge.items?.length ?? 0,
+            pendingDuplicates: merge.duplicates.filter((d) => d.status === 'pending').length,
+            confirmedDuplicates: merge.duplicates.filter((d) => d.status === 'confirmed').length,
+            dismissedDuplicates: merge.duplicates.filter((d) => d.status === 'dismissed').length,
+          },
+        }
+      : {}),
   };
 }

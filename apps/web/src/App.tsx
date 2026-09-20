@@ -12,6 +12,7 @@ import { WorkspaceListPage } from './features/workspace/WorkspaceListPage';
 import { WorkspaceHomePage } from './features/workspace/WorkspaceHomePage';
 import { MembersPage } from './features/workspace/MembersPage';
 import { RecipeDetailPage } from './features/recipe/RecipeDetailPage';
+import { MergePage } from './features/merge/MergePage';
 import { RecorderPage } from './features/recorder/RecorderPage';
 import { InboxPage } from './features/vagueItems/InboxPage';
 import { EditorPage } from './features/editor/EditorPage';
@@ -88,6 +89,7 @@ export function App() {
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="activity" element={<ActivityPage />} />
           <Route path="recipes/:recipeId" element={<RecipeDetailPage />} />
+          <Route path="recipes/:recipeId/merge" element={<MergePage />} />
           <Route path="recipes/:recipeId/record" element={<RecorderPage />} />
           <Route path="recipes/:recipeId/inbox" element={<InboxPage />} />
           <Route path="recipes/:recipeId/edit" element={<EditorPage />} />

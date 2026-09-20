@@ -151,6 +151,44 @@ export async function assertClipRole(userId: string, clipId: string, required: W
   return { ...access, clipId: clip.id };
 }
 
+export async function assertTimelineMergeRole(userId: string, mergeId: string, required: WorkspaceRole) {
+  const merge = await prisma.timelineMerge.findUnique({
+    where: { id: mergeId },
+    select: { id: true, recipeId: true, status: true },
+  });
+  if (!merge) throw notFound('合并提案');
+  const access = await assertRecipeRole(userId, merge.recipeId, required);
+  return { ...access, mergeId: merge.id, mergeStatus: merge.status };
+}
+
+export async function assertTimelineDuplicateRole(
+  userId: string,
+  duplicateId: string,
+  required: WorkspaceRole,
+) {
+  const duplicate = await prisma.timelineDuplicate.findUnique({
+    where: { id: duplicateId },
+    select: { id: true, merge: { select: { id: true, recipeId: true, status: true } } },
+  });
+  if (!duplicate) throw notFound('重复表述');
+  const access = await assertRecipeRole(userId, duplicate.merge.recipeId, required);
+  return { ...access, mergeId: duplicate.merge.id, mergeStatus: duplicate.merge.status };
+}
+
+export async function assertTimelineMergeItemRole(
+  userId: string,
+  itemId: string,
+  required: WorkspaceRole,
+) {
+  const item = await prisma.timelineMergeItem.findUnique({
+    where: { id: itemId },
+    select: { id: true, merge: { select: { id: true, recipeId: true, status: true } } },
+  });
+  if (!item) throw notFound('时间轴条目');
+  const access = await assertRecipeRole(userId, item.merge.recipeId, required);
+  return { ...access, mergeId: item.merge.id, mergeStatus: item.merge.status };
+}
+
 /** 版本可编辑性守卫：只有 draft 可以改 */
 export function assertVersionEditable(status: string) {
   if (status !== 'draft') throw new ApiError('VERSION_NOT_EDITABLE');

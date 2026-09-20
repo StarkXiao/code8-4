@@ -115,7 +115,7 @@ origin/
 │  └─ tests/                 spec 单测 + closed-loop 集成测试
 ├─ apps/web/                 前端：React 18 + Vite + TanStack Query + antd
 │  ├─ src/components/        Waveform / GlobalPlayer / AudioRecorder / SpecEditor
-│  ├─ src/features/          录音工作台 / 追问台 / 草稿编辑器 / 版本差异 / 复做验证
+│  ├─ src/features/          录音工作台 / 多段口述合并 / 追问台 / 草稿编辑器 / 版本差异 / 复做验证
 │  └─ e2e/                   Playwright 闭环用例
 └─ data/                     运行时生成：app.db、audio/、backups/
 ```
@@ -135,6 +135,8 @@ origin/
 **已经发布的版本不可修改。** 要改就派生新草稿，改动会记进版本差异。发布必须写变更说明。当"谁在什么时候把'一点糖'改成了 3g、为什么"成为硬性要求，版本历史才有意义。
 
 **贡献者不给下结论。** 家人（贡献者）可以录音、回答追问、提交复做验证，但不能改规格、不能发布版本 —— 避免多人同时改数字。这条如果不符合你的家庭习惯，改 `apps/server/src/services/access.ts` 里的角色要求即可。
+
+**多段口述合并前必须过人。** 同一道菜分几次说的口述，可以在「多段口述合并」页生成合并提案：各段默认首尾相接排上同一条时间轴（位置可微调），系统按转写文本自动标出跨段重复的表述。标记全部是"待确认"状态，必须逐条人工确认或驳回后才允许执行合并 —— 与"暂定结论不允许发布"同一条原则：机器只标出来，结论由人下。合并不改动任何原始音频，只是固定一条共用的虚拟时间轴；重复片段的时间位置是按字符比例的估算值，界面上会明说。
 
 **转写是加速器，不是必需品。** 默认 `ASR_PROVIDER=manual`：不调用任何外部服务，转写由人工录入，全流程照样跑通。想省事可以切 `whisper-local`（本机装 whisper）或 `openai`（需要 API Key）。
 
@@ -177,9 +179,13 @@ origin/
 
 **UI 层闭环**（`apps/web/e2e/closed-loop.spec.ts`）：在真实 Chrome 里从注册走到发布，包含在波形上拖拽框选片段，最后验证导出真的能下载。
 
+**多段口述合并**（`apps/server/tests/timeline-merge.test.ts` + `tests/timeline-detect.test.ts` + `apps/web/e2e/merge.spec.ts`）：
+重复表述检测的归一化/子串归并/跨段判定，创建提案 -> 闸门拦截 -> 人工确认 -> 合并 -> 终态不可改，
+以及贡献者只读、跨食谱音频拒绝、同一食谱同时只允许一个待确认提案。
+
 ```bash
-npm run test        # 后端 60 个测试
-npm run test:e2e    # 浏览器端 4 条用例（默认用系统 Chrome）
+npm run test        # 后端 79 个测试
+npm run test:e2e    # 浏览器端 5 条用例（默认用系统 Chrome）
 ```
 
 浏览器端除了闭环，还有两条覆盖面更广的用例：

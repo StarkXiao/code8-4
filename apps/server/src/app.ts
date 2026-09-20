@@ -13,6 +13,7 @@ import { workspaceRouter } from './modules/workspace.routes';
 import { recipeRouter } from './modules/recipe.routes';
 import { versionRouter } from './modules/version.routes';
 import { audioRouter } from './modules/audio.routes';
+import { timelineMergeRouter } from './modules/timelineMerge.routes';
 import { vagueItemRouter } from './modules/vagueItem.routes';
 import { commentRouter } from './modules/comment.routes';
 import { verificationRouter } from './modules/verification.routes';
@@ -88,6 +89,7 @@ export function createApp(): Express {
   app.use('/api/recipes', recipeRouter);
   app.use('/api', versionRouter);
   app.use('/api', audioRouter);
+  app.use('/api', timelineMergeRouter);
   app.use('/api', vagueItemRouter);
   app.use('/api', commentRouter);
   app.use('/api', verificationRouter);

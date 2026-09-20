@@ -76,6 +76,21 @@ export type CommentTargetType = (typeof COMMENT_TARGET_TYPES)[number];
 export const HEAT_LEVELS = ['low', 'medium_low', 'medium', 'medium_high', 'high'] as const;
 export type HeatLevel = (typeof HEAT_LEVELS)[number];
 
+/**
+ * 多段口述合并提案的生命周期。
+ * reviewing（待确认）-> merged（已合并）/ discarded（已放弃）。
+ * 只有 reviewing 可以修改；merged 是终态，像已发布版本一样不再变动。
+ */
+export const TIMELINE_MERGE_STATUSES = ['reviewing', 'merged', 'discarded'] as const;
+export type TimelineMergeStatus = (typeof TIMELINE_MERGE_STATUSES)[number];
+
+/**
+ * 自动标出的重复表述的确认状态。
+ * pending 必须全部被确认（confirmed）或驳回（dismissed）后，合并提案才允许执行合并。
+ */
+export const TIMELINE_DUPLICATE_STATUSES = ['pending', 'confirmed', 'dismissed'] as const;
+export type TimelineDuplicateStatus = (typeof TIMELINE_DUPLICATE_STATUSES)[number];
+
 /** 音频上传白名单 */
 export const ALLOWED_AUDIO_MIME_TYPES = [
   'audio/webm',
@@ -107,6 +122,9 @@ export const ERROR_CODES = {
   CHANGE_NOTE_REQUIRED: 422,
   DEVIATION_REQUIRED: 422,
   VAGUE_INVALID_TRANSITION: 409,
+  TIMELINE_MERGE_REVIEW_PENDING: 409,
+  TIMELINE_MERGE_INVALID_TRANSITION: 409,
+  TIMELINE_DUPLICATES_PENDING: 409,
   AUDIO_NOT_FOUND: 404,
   UPLOAD_TYPE_NOT_ALLOWED: 415,
   UPLOAD_TOO_LARGE: 413,
@@ -162,4 +180,16 @@ export const HEAT_LEVEL_LABELS: Record<HeatLevel, string> = {
   medium: '中火',
   medium_high: '中大火',
   high: '大火',
+};
+
+export const TIMELINE_MERGE_STATUS_LABELS: Record<TimelineMergeStatus, string> = {
+  reviewing: '待确认',
+  merged: '已合并',
+  discarded: '已放弃',
+};
+
+export const TIMELINE_DUPLICATE_STATUS_LABELS: Record<TimelineDuplicateStatus, string> = {
+  pending: '待确认',
+  confirmed: '确认重复',
+  dismissed: '各自保留',
 };

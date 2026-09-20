@@ -19,6 +19,8 @@ import type {
   RecipeVersionDto,
   ResolvedSpec,
   StepDto,
+  TimelineMergeDto,
+  TimelineMergeItemDto,
   UserDto,
   VagueCategory,
   VagueItemDto,
@@ -187,6 +189,25 @@ export const audioApi = {
   /** <audio> 标签无法自定义请求头，因此通过查询参数携带令牌 */
   streamUrl: (audioId: string, accessToken: string | null) =>
     `/api/audio/${audioId}/stream${accessToken ? `?access_token=${encodeURIComponent(accessToken)}` : ''}`,
+};
+
+/* ---------------- 多段口述合并时间轴 ---------------- */
+
+export const timelineApi = {
+  list: (recipeId: string) =>
+    unwrap<TimelineMergeDto[]>(api.get(`/recipes/${recipeId}/timeline-merges`)),
+  create: (recipeId: string, audioIds: string[]) =>
+    unwrap<TimelineMergeDto>(api.post(`/recipes/${recipeId}/timeline-merges`, { audioIds })),
+  get: (mergeId: string) => unwrap<TimelineMergeDto>(api.get(`/timeline-merges/${mergeId}`)),
+  updateItemOffset: (itemId: string, offsetMs: number) =>
+    unwrap<TimelineMergeItemDto>(api.patch(`/timeline-merge-items/${itemId}`, { offsetMs })),
+  confirmDuplicate: (duplicateId: string) =>
+    unwrap<TimelineMergeDto>(api.post(`/timeline-duplicates/${duplicateId}/confirm`)),
+  dismissDuplicate: (duplicateId: string) =>
+    unwrap<TimelineMergeDto>(api.post(`/timeline-duplicates/${duplicateId}/dismiss`)),
+  merge: (mergeId: string) => unwrap<TimelineMergeDto>(api.post(`/timeline-merges/${mergeId}/merge`)),
+  discard: (mergeId: string) =>
+    unwrap<TimelineMergeDto>(api.post(`/timeline-merges/${mergeId}/discard`)),
 };
 
 /* ---------------- 待澄清条目 ---------------- */

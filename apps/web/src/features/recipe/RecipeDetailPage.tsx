@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Descriptions, Empty, Space, Spin, Tag, Typography } from 'antd';
-import { FileTextOutlined, PlusOutlined, SoundOutlined } from '@ant-design/icons';
+import { FileTextOutlined, MergeCellsOutlined, PlusOutlined, SoundOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CONFIDENCE_LABELS,
@@ -87,6 +87,9 @@ export function RecipeDetailPage() {
             <Button type="primary" icon={<SoundOutlined />}>
               录音
             </Button>
+          </Link>
+          <Link to={`/w/${workspaceId}/recipes/${recipeId}/merge`}>
+            <Button icon={<MergeCellsOutlined />}>多段口述合并</Button>
           </Link>
           <Link to={`/w/${workspaceId}/recipes/${recipeId}/inbox`}>
             <Button>

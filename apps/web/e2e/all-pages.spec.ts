@@ -254,6 +254,7 @@ function pageRoutes(data: Seeded): { path: string; expect: RegExp }[] {
     { path: `${base}/notifications`, expect: /通知/ },
     { path: `${base}/activity`, expect: /操作日志/ },
     { path: recipe, expect: /全页面红烧肉/ },
+    { path: `${recipe}/merge`, expect: /多段口述合并/ },
     { path: `${recipe}/record`, expect: /录音工作台/ },
     { path: `${recipe}/inbox`, expect: /追问台/ },
     { path: `${recipe}/edit`, expect: /编辑草稿/ },

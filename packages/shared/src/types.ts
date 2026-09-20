@@ -5,6 +5,8 @@ import type {
   HeatLevel,
   NotificationType,
   RecipeStatus,
+  TimelineDuplicateStatus,
+  TimelineMergeStatus,
   TranscriptStatus,
   VagueCategory,
   VagueStatus,
@@ -324,4 +326,66 @@ export interface VersionDiffDto {
   targetVersion: { id: string; versionNo: number };
   entries: DiffEntry[];
   summary: { added: number; removed: number; modified: number; moved: number };
+}
+
+/* ------------------------------------------------------------------ */
+/* 多段口述合并时间轴                                                    */
+/* ------------------------------------------------------------------ */
+
+/** 重复表述的一次出现：定位到某段口述转写里的一个字符区间 */
+export interface TimelineDuplicateOccurrence {
+  audioId: string;
+  /** 出现重复的那句原话（完整子句，便于对照上下文） */
+  text: string;
+  /** 重复片段在转写全文中的字符区间 [startChar, endChar) */
+  startChar: number;
+  endChar: number;
+  /** 转写没有词级时间戳，按字符位置等比估算的时间（毫秒） */
+  estimatedStartMs: number;
+  estimatedEndMs: number;
+}
+
+export interface TimelineMergeItemDto {
+  id: string;
+  mergeId: string;
+  audioId: string;
+  orderIndex: number;
+  /** 该段口述在合并时间轴上的起始偏移（毫秒） */
+  offsetMs: number;
+  audio?: AudioAttachmentDto;
+}
+
+export interface TimelineDuplicateDto {
+  id: string;
+  mergeId: string;
+  normalizedText: string;
+  displayText: string;
+  occurrences: TimelineDuplicateOccurrence[];
+  status: TimelineDuplicateStatus;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TimelineMergeCounts {
+  items: number;
+  pendingDuplicates: number;
+  confirmedDuplicates: number;
+  dismissedDuplicates: number;
+}
+
+export interface TimelineMergeDto {
+  id: string;
+  recipeId: string;
+  status: TimelineMergeStatus;
+  /** max(各段 offsetMs + 时长)，由条目实时计算，不落库 */
+  totalDurationMs: number;
+  createdBy: string;
+  mergedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items?: TimelineMergeItemDto[];
+  duplicates?: TimelineDuplicateDto[];
+  counts?: TimelineMergeCounts;
 }
