@@ -13,6 +13,7 @@ import { WorkspaceHomePage } from './features/workspace/WorkspaceHomePage';
 import { MembersPage } from './features/workspace/MembersPage';
 import { RecipeDetailPage } from './features/recipe/RecipeDetailPage';
 import { RecorderPage } from './features/recorder/RecorderPage';
+import { TimelinePage } from './features/timeline/TimelinePage';
 import { InboxPage } from './features/vagueItems/InboxPage';
 import { EditorPage } from './features/editor/EditorPage';
 import { VersionsPage } from './features/versions/VersionsPage';
@@ -89,6 +90,7 @@ export function App() {
           <Route path="activity" element={<ActivityPage />} />
           <Route path="recipes/:recipeId" element={<RecipeDetailPage />} />
           <Route path="recipes/:recipeId/record" element={<RecorderPage />} />
+          <Route path="recipes/:recipeId/timeline" element={<TimelinePage />} />
           <Route path="recipes/:recipeId/inbox" element={<InboxPage />} />
           <Route path="recipes/:recipeId/edit" element={<EditorPage />} />
           <Route path="recipes/:recipeId/verify" element={<VerifyPage />} />

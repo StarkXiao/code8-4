@@ -472,3 +472,66 @@ a {
 body.has-player .froa-main {
   padding-bottom: 6rem;
 }
+
+/* ---------------- 口述时间轴 ---------------- */
+
+.froa-timeline-wave {
+  width: 100%;
+  background: #faf6f1;
+  border: 1px solid var(--froa-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.froa-timeline-wave canvas {
+  display: block;
+}
+
+.froa-check-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--froa-border);
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.froa-check-row:hover {
+  background: var(--froa-primary-soft);
+}
+
+.froa-multi-select {
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid var(--froa-border);
+  border-radius: 8px;
+  padding: 0.4rem;
+}
+
+.froa-dup-member {
+  border: 1px solid var(--froa-border);
+  border-left: 3px solid #d9a441;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  background: #fffdf8;
+}
+
+.froa-dup-member[data-kept] {
+  border-left-color: #52a447;
+  background: #f4fbf2;
+}
+
+.froa-note-input {
+  width: 100%;
+  border: 1px solid var(--froa-border);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+.froa-note-input:focus {
+  outline: none;
+  border-color: var(--froa-primary);
+}

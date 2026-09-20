@@ -43,6 +43,8 @@ model User {
   notifications      Notification[]
   activities         ActivityLog[]
   referencesCreated  KitchenReference[]
+  timelinesCreated   AudioTimeline[]   @relation("TimelineCreatedBy")
+  timelinesMerged    AudioTimeline[]   @relation("TimelineMergedBy")
 }
 
 model Workspace {
@@ -114,6 +116,7 @@ model Recipe {
   audio         AudioAttachment[]
   vagueItems    VagueItem[]
   verifications VerificationRun[]
+  timelines     AudioTimeline[]
 
   @@index([workspaceId, status])
 }
@@ -222,6 +225,7 @@ model AudioAttachment {
   recipe    Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   owner     User      @relation("AudioOwner", fields: [ownerId], references: [id])
   clips     AudioClip[]
+  timelineTracks TimelineTrack[]
 
   @@index([recipeId, kind])
   @@index([recipeId, transcriptStatus])
@@ -243,6 +247,80 @@ model AudioClip {
   vagueItemAnswers VagueItem[]     @relation("VagueItemAnswerClip")
 
   @@index([audioAttachmentId])
+}
+
+// ------------------------------------------------------------------
+// 口述时间轴：同一道菜的多段口述排到同一条虚拟时间轴
+// ------------------------------------------------------------------
+//
+// 关键约束：音频永远是只增不改的证据。时间轴**不拼接、不复制、不删除**
+// 任何音频文件，它只是一个"顺序 + 偏移 + 重复表述人工裁定"的整理层。
+// 多段录音仍各自可独立回放，时间轴上每个结论都能顺着 track → audio 回到原声。
+
+/// 每张食谱至多一条进行中的时间轴；合并定稿后可重开继续整理。
+model AudioTimeline {
+  id               String    @id
+  recipeId         String
+  status           String    @default("building")
+  title            String?
+  /// 合并定稿后的转写全文（重复句按人工裁定只保留首选句）
+  mergedTranscript String?
+  totalDurationMs  Int?
+  createdBy        String
+  mergedBy         String?
+  mergedAt         DateTime?
+  /// 合并时填写的取舍说明
+  changeNote       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  recipe          Recipe                    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  creator         User                      @relation("TimelineCreatedBy", fields: [createdBy], references: [id])
+  merger          User?                     @relation("TimelineMergedBy", fields: [mergedBy], references: [id])
+  tracks          TimelineTrack[]
+  duplicateGroups TimelineDuplicateGroup[]
+
+  @@index([recipeId, status])
+}
+
+model TimelineTrack {
+  id         String   @id
+  timelineId String
+  audioId    String
+  /// 在合并时间轴上的起点毫秒，由前面各段时长累加；重排后全量重算
+  offsetMs   Int      @default(0)
+  orderIndex Int
+  durationMs Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  timeline AudioTimeline    @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+  audio    AudioAttachment  @relation(fields: [audioId], references: [id], onDelete: Cascade)
+
+  @@unique([timelineId, audioId])
+  @@index([timelineId, orderIndex])
+}
+
+/// 自动标出的"疑似重复表述"组；必须逐组经人工确认后，时间轴才允许合并。
+model TimelineDuplicateGroup {
+  id          String   @id
+  timelineId  String
+  /// JSON：{ audioId, sentence }[]，检测时刻的快照
+  members     String
+  /// 组内最低相似度 0..1
+  score       Float
+  status      String   @default("pending")
+  /// 确认重复时，保留哪一句所在的音频
+  keepAudioId String?
+  reviewNote  String?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  timeline AudioTimeline @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+
+  @@index([timelineId, status])
 }
 
 // ------------------------------------------------------------------

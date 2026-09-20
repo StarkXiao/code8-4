@@ -50,6 +50,23 @@ export type AudioKind = (typeof AUDIO_KINDS)[number];
 export const TRANSCRIPT_STATUSES = ['none', 'pending', 'done', 'failed'] as const;
 export type TranscriptStatus = (typeof TRANSCRIPT_STATUSES)[number];
 
+/**
+ * 口述时间轴的生命周期。
+ * building：正在排音频、等系统标出疑似重复；
+ * reviewing：重复组已生成，整理者逐组确认"是重复 / 不是"；
+ * merged：所有重复组都有人工结论，时间轴已合并定稿（只读，要改就重开）。
+ */
+export const TIMELINE_STATUSES = ['building', 'reviewing', 'merged'] as const;
+export type TimelineStatus = (typeof TIMELINE_STATUSES)[number];
+
+/**
+ * 一组"疑似重复表述"的人工裁定状态。
+ * pending：还没人看；duplicate：确认是重复（合并时只保留首选句）；
+ * distinct：人工判定不是重复（两句都保留）。
+ */
+export const DUPLICATE_REVIEW_STATES = ['pending', 'duplicate', 'distinct'] as const;
+export type DuplicateReviewState = (typeof DUPLICATE_REVIEW_STATES)[number];
+
 export const VERIFICATION_RESULTS = ['success', 'partial', 'fail'] as const;
 export type VerificationResult = (typeof VERIFICATION_RESULTS)[number];
 
@@ -107,6 +124,10 @@ export const ERROR_CODES = {
   CHANGE_NOTE_REQUIRED: 422,
   DEVIATION_REQUIRED: 422,
   VAGUE_INVALID_TRANSITION: 409,
+  TIMELINE_NOT_FOUND: 404,
+  TIMELINE_INVALID_TRANSITION: 409,
+  TIMELINE_HAS_PENDING_REVIEW: 409,
+  TIMELINE_AUDIO_CONFLICT: 409,
   AUDIO_NOT_FOUND: 404,
   UPLOAD_TYPE_NOT_ALLOWED: 415,
   UPLOAD_TOO_LARGE: 413,
@@ -154,6 +175,18 @@ export const VERSION_STATUS_LABELS: Record<VersionStatus, string> = {
   in_review: '评审中',
   published: '已发布',
   archived: '已归档',
+};
+
+export const TIMELINE_STATUS_LABELS: Record<TimelineStatus, string> = {
+  building: '整理中',
+  reviewing: '待确认重复',
+  merged: '已合并',
+};
+
+export const DUPLICATE_REVIEW_LABELS: Record<DuplicateReviewState, string> = {
+  pending: '待确认',
+  duplicate: '确认重复',
+  distinct: '不是重复',
 };
 
 export const HEAT_LEVEL_LABELS: Record<HeatLevel, string> = {

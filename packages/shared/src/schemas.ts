@@ -210,6 +210,63 @@ export const updateTranscriptSchema = z.object({
 });
 
 /* ------------------------------------------------------------------ */
+/* 口述时间轴                                                          */
+/* ------------------------------------------------------------------ */
+
+export const createTimelineSchema = z.object({
+  title: z.string().trim().min(1, '请填写时间轴名称').max(120),
+  /** 不传则初始化为空时间轴，之后再逐段加入 */
+  audioIds: z.array(idSchema).max(100).optional(),
+});
+
+export const updateTimelineSchema = z.object({
+  title: z.string().trim().min(1).max(120).optional(),
+  expectedUpdatedAt: expectedUpdatedAtSchema,
+});
+
+export const addTimelineTracksSchema = z.object({
+  audioIds: z.array(idSchema).min(1, '至少选择一段口述').max(100),
+  /**
+   * 可选：显式指定插入位置（插到该 orderIndex 之前）。
+   * 不传则追加到末尾。
+   */
+  beforeOrderIndex: z.number().int().min(0).optional(),
+});
+
+export const reorderTimelineTracksSchema = z.object({
+  orderedAudioIds: z.array(idSchema).min(1),
+});
+
+export const scanTimelineSchema = z.object({
+  /** 相似度阈值 0..1，覆盖默认值；给得太松会刷出大量误报 */
+  threshold: z.number().min(0.3).max(0.95).optional(),
+  /** 重新扫描前是否丢弃尚未人工裁定的旧组（已裁定的永远保留） */
+  replacePending: z.boolean().optional(),
+});
+
+export const reviewDuplicateSchema = z.object({
+  status: z.enum(['duplicate', 'distinct']),
+  /** 确认重复时必须指定保留哪一句，且该音频必须是组内成员 */
+  keepAudioId: idSchema.nullish(),
+  note: z.string().trim().max(500).nullish(),
+  expectedUpdatedAt: expectedUpdatedAtSchema,
+});
+
+export const mergeTimelineSchema = z.object({
+  /** 必须写一句合并说明（与发布版本同理：为什么并、怎么取舍的） */
+  changeNote: z
+    .string()
+    .trim()
+    .min(5, '合并必须填写说明（至少 5 个字）：这些重复表述是怎么取舍的')
+    .max(2000),
+  expectedUpdatedAt: expectedUpdatedAtSchema,
+});
+
+export const reopenTimelineSchema = z.object({
+  reason: z.string().trim().min(2, '请说明重开原因').max(500),
+});
+
+/* ------------------------------------------------------------------ */
 /* 待澄清条目（核心）                                                  */
 /* ------------------------------------------------------------------ */
 

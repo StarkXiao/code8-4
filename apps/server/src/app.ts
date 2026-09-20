@@ -14,6 +14,7 @@ import { recipeRouter } from './modules/recipe.routes';
 import { versionRouter } from './modules/version.routes';
 import { audioRouter } from './modules/audio.routes';
 import { vagueItemRouter } from './modules/vagueItem.routes';
+import { timelineRouter } from './modules/timeline.routes';
 import { commentRouter } from './modules/comment.routes';
 import { verificationRouter } from './modules/verification.routes';
 import { notificationRouter } from './modules/notification.routes';
@@ -89,6 +90,7 @@ export function createApp(): Express {
   app.use('/api', versionRouter);
   app.use('/api', audioRouter);
   app.use('/api', vagueItemRouter);
+  app.use('/api', timelineRouter);
   app.use('/api', commentRouter);
   app.use('/api', verificationRouter);
   app.use('/api', notificationRouter);

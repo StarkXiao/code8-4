@@ -2,6 +2,7 @@ import type {
   ActivityLogDto,
   AudioAttachmentDto,
   AudioClipDto,
+  AudioTimelineDto,
   AuthTokens,
   CommentDto,
   CommentTargetType,
@@ -19,6 +20,7 @@ import type {
   RecipeVersionDto,
   ResolvedSpec,
   StepDto,
+  TimelineDuplicateGroupDto,
   UserDto,
   VagueCategory,
   VagueItemDto,
@@ -240,6 +242,43 @@ export const vagueItemApi = {
     unwrap<VagueItemDto>(api.post(`/vague-items/${itemId}/reopen`, { reason })),
   history: (itemId: string) => unwrap<ActivityLogDto[]>(api.get(`/vague-items/${itemId}/history`)),
 };
+
+/* ---------------- 口述时间轴 ---------------- */
+
+export const timelineApi = {
+  list: (recipeId: string) => unwrap<AudioTimelineDto[]>(api.get(`/recipes/${recipeId}/timelines`)),
+  create: (recipeId: string, input: { title: string; audioIds?: string[] }) =>
+    unwrap<AudioTimelineDto>(api.post(`/recipes/${recipeId}/timelines`, input)),
+  get: (timelineId: string) => unwrap<AudioTimelineDto>(api.get(`/timelines/${timelineId}`)),
+  update: (timelineId: string, input: { title?: string; expectedUpdatedAt?: string }) =>
+    unwrap<AudioTimelineDto>(api.patch(`/timelines/${timelineId}`, input)),
+  addTracks: (timelineId: string, input: { audioIds: string[]; beforeOrderIndex?: number }) =>
+    unwrap<AudioTimelineDto>(api.post(`/timelines/${timelineId}/tracks`, input)),
+  removeTrack: (timelineId: string, audioId: string) =>
+    unwrap<AudioTimelineDto>(api.delete(`/timelines/${timelineId}/tracks/${audioId}`)),
+  reorder: (timelineId: string, orderedAudioIds: string[]) =>
+    unwrap<AudioTimelineDto>(api.post(`/timelines/${timelineId}/reorder`, { orderedAudioIds })),
+  scan: (timelineId: string, input?: { threshold?: number; replacePending?: boolean }) =>
+    unwrap<AudioTimelineDto & { untranscribedAudioIds: string[]; scannedAt: string }>(
+      api.post(`/timelines/${timelineId}/scan-duplicates`, input ?? {}),
+    ),
+  review: (
+    timelineId: string,
+    groupId: string,
+    input: {
+      status: 'duplicate' | 'distinct';
+      keepAudioId?: string | null;
+      note?: string | null;
+      expectedUpdatedAt?: string;
+    },
+  ) => unwrap<AudioTimelineDto>(api.post(`/timelines/${timelineId}/duplicates/${groupId}/review`, input)),
+  merge: (timelineId: string, input: { changeNote: string; expectedUpdatedAt?: string }) =>
+    unwrap<AudioTimelineDto>(api.post(`/timelines/${timelineId}/merge`, input)),
+  reopen: (timelineId: string, reason: string) =>
+    unwrap<AudioTimelineDto>(api.post(`/timelines/${timelineId}/reopen`, { reason })),
+};
+
+export type { TimelineDuplicateGroupDto };
 
 /* ---------------- 评论 / 验证 / 通知 ---------------- */
 

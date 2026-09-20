@@ -2,9 +2,11 @@ import type {
   AudioKind,
   CommentTargetType,
   Confidence,
+  DuplicateReviewState,
   HeatLevel,
   NotificationType,
   RecipeStatus,
+  TimelineStatus,
   TranscriptStatus,
   VagueCategory,
   VagueStatus,
@@ -185,6 +187,80 @@ export interface AudioClipDto {
   label: string | null;
   createdBy: string;
   createdAt: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* 口述时间轴：把同一道菜的多段口述排到同一条虚拟时间轴上               */
+/* ------------------------------------------------------------------ */
+
+/** 时间轴上的一段口述（一个 AudioAttachment 对应一个轨道成员） */
+export interface TimelineTrackDto {
+  id: string;
+  timelineId: string;
+  audioId: string;
+  /** 在合并时间轴上的起点（毫秒）；前面各段时长累加得到 */
+  offsetMs: number;
+  orderIndex: number;
+  /** 该段时长冗余一份，音频本身不可变，这里只是避免前端到处 join */
+  durationMs: number;
+  createdAt: string;
+  updatedAt: string;
+  /** 列表 / 详情接口按需展开 */
+  audio?: AudioAttachmentDto;
+}
+
+/** 一组跨音频段的疑似重复表述 */
+export interface TimelineDuplicateGroupDto {
+  id: string;
+  timelineId: string;
+  /**
+   * JSON：DuplicateMember[]。
+   * 句子以入组时的转写为准（检测快照），转写后来被人修改也不影响待办本身，
+   * 需要的话重新"扫描重复"即可生成新一轮的组。
+   */
+  members: {
+    audioId: string;
+    sentence: string;
+    audio?: AudioAttachmentDto;
+  }[];
+  /** 组内最低相似度 0..1，作为"有多像"的参考，不参与任何自动决策 */
+  score: number;
+  status: DuplicateReviewState;
+  /** 人工裁定后保留哪一句（audioId）；确认重复时必填 */
+  keepAudioId: string | null;
+  /** 人工补充：为什么判重复 / 为什么不是 */
+  reviewNote: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AudioTimelineDto {
+  id: string;
+  recipeId: string;
+  status: TimelineStatus;
+  title: string | null;
+  /** 合并定稿后的全文：按轨道顺序拼接，重复句按人工裁定只保留首选句 */
+  mergedTranscript: string | null;
+  /** 定稿时全轴总时长（毫秒），纯展示用 */
+  totalDurationMs: number | null;
+  createdBy: string;
+  mergedBy: string | null;
+  mergedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  tracks?: TimelineTrackDto[];
+  duplicateGroups?: TimelineDuplicateGroupDto[];
+  /** 待确认的重复组数：合并闸门口径也由服务端按它算 */
+  pendingReviewCount?: number;
+}
+
+export interface TimelineReviewDecision {
+  /** duplicate 时保留的那句所在的音频 */
+  keepAudioId?: string | null;
+  note?: string | null;
+  expectedUpdatedAt?: string;
 }
 
 export interface VagueItemDto {

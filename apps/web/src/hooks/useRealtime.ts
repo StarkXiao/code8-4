@@ -40,6 +40,9 @@ export function useRealtime(): void {
       invalidate([['verifications'], ['vague-items'], ['recipe'], ['recipes']]);
     });
     socket.on('audio:created', () => invalidate([['audio']]));
+    socket.on('timeline:created', () => invalidate([['timelines'], ['recipe'], ['recipes']]));
+    socket.on('timeline:updated', () => invalidate([['timelines'], ['timeline'], ['recipe'], ['recipes']]));
+    socket.on('timeline:merged', () => invalidate([['timelines'], ['timeline'], ['recipe'], ['recipes']]));
     socket.on('notification:new', () => invalidate([['notifications']]));
 
     return () => {

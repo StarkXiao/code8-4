@@ -2,6 +2,7 @@ import type {
   ActivityLogDto,
   AudioAttachmentDto,
   AudioClipDto,
+  AudioTimelineDto,
   CommentDto,
   IngredientDto,
   KitchenReferenceDto,
@@ -10,6 +11,8 @@ import type {
   RecipeVersionDto,
   ResolvedSpec,
   StepDto,
+  TimelineDuplicateGroupDto,
+  TimelineTrackDto,
   UserDto,
   VagueItemDto,
   VerificationRunDto,
@@ -20,9 +23,11 @@ import type {
   AudioKind,
   CommentTargetType,
   Confidence,
+  DuplicateReviewState,
   HeatLevel,
   NotificationType,
   RecipeStatus,
+  TimelineStatus,
   TranscriptStatus,
   VagueCategory,
   VagueStatus,
@@ -409,8 +414,113 @@ export function toReferenceDto(reference: {
   };
 }
 
-export function toVersionDto(
-  version: {
+/* ------------------------------------------------------------------ */
+/* 口述时间轴                                                          */
+/* ------------------------------------------------------------------ */
+
+export function toTimelineTrackDto(
+  track: {
+    id: string;
+    timelineId: string;
+    audioId: string;
+    offsetMs: number;
+    orderIndex: number;
+    durationMs: number;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  audio?: Parameters<typeof toAudioDto>[0],
+): TimelineTrackDto {
+  return {
+    id: track.id,
+    timelineId: track.timelineId,
+    audioId: track.audioId,
+    offsetMs: track.offsetMs,
+    orderIndex: track.orderIndex,
+    durationMs: track.durationMs,
+    createdAt: track.createdAt.toISOString(),
+    updatedAt: track.updatedAt.toISOString(),
+    ...(audio ? { audio: toAudioDto(audio) } : {}),
+  };
+}
+
+export function toDuplicateGroupDto(
+  group: {
+    id: string;
+    timelineId: string;
+    members: string;
+    score: number;
+    status: string;
+    keepAudioId: string | null;
+    reviewNote: string | null;
+    reviewedBy: string | null;
+    reviewedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  audioById?: Map<string, Parameters<typeof toAudioDto>[0]>,
+): TimelineDuplicateGroupDto {
+  const members = parseJson<{ audioId: string; sentence: string }[]>(group.members, []);
+  return {
+    id: group.id,
+    timelineId: group.timelineId,
+    members: members.map((member) => ({
+      ...member,
+      ...(audioById?.get(member.audioId) ? { audio: toAudioDto(audioById.get(member.audioId)!) } : {}),
+    })),
+    score: group.score,
+    status: group.status as DuplicateReviewState,
+    keepAudioId: group.keepAudioId,
+    reviewNote: group.reviewNote,
+    reviewedBy: group.reviewedBy,
+    reviewedAt: iso(group.reviewedAt),
+    createdAt: group.createdAt.toISOString(),
+    updatedAt: group.updatedAt.toISOString(),
+  };
+}
+
+export function toTimelineDto(
+  timeline: {
+    id: string;
+    recipeId: string;
+    status: string;
+    title: string | null;
+    mergedTranscript: string | null;
+    totalDurationMs: number | null;
+    createdBy: string;
+    mergedBy: string | null;
+    mergedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  include?: {
+    tracks?: TimelineTrackDto[];
+    duplicateGroups?: TimelineDuplicateGroupDto[];
+  },
+): AudioTimelineDto {
+  return {
+    id: timeline.id,
+    recipeId: timeline.recipeId,
+    status: timeline.status as TimelineStatus,
+    title: timeline.title,
+    mergedTranscript: timeline.mergedTranscript,
+    totalDurationMs: timeline.totalDurationMs,
+    createdBy: timeline.createdBy,
+    mergedBy: timeline.mergedBy,
+    mergedAt: iso(timeline.mergedAt),
+    createdAt: timeline.createdAt.toISOString(),
+    updatedAt: timeline.updatedAt.toISOString(),
+    ...(include?.tracks ? { tracks: include.tracks } : {}),
+    ...(include?.duplicateGroups ? { duplicateGroups: include.duplicateGroups } : {}),
+    ...(include?.duplicateGroups
+      ? {
+          pendingReviewCount: include.duplicateGroups.filter((group) => group.status === 'pending').length,
+        }
+      : {}),
+  };
+}
+
+export function toVersionDto(  version: {
     id: string;
     recipeId: string;
     versionNo: number;
